@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 import wandb
 import itertools
+import datetime
 import time
 
 wandb.login()
@@ -654,6 +655,9 @@ test_data_loader = get_data_loader(test_data, batch_size)
 
 all_seeds = [434345, 434345, 232, 875434, 3232356, 42, 645332, 67789, 3426, 2354]
 
+now = datetime.datetime.now()
+date_string = now.strftime("%Y-%m-%d")
+
 for i in range(len(hidden_size_encoder)):
     for j in range(len(lr)):
         for k in range(len(n_layers)):
@@ -727,7 +731,7 @@ for i in range(len(hidden_size_encoder)):
 
                     if valid_loss < best_valid_loss:
                         best_valid_loss = valid_loss
-                        torch.save(model.state_dict(), "/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/amass_babel_frame_ann_MiniLM_16_07_2004_1024_0.001_4_192.pt")
+                        torch.save(model.state_dict(), f"/home/michieletto/Progetti_per_tesi/Progetti_RNN_git/Parametri_modello/amass_babel_frame_ann_MiniLM_{date_string}_{hidden_size_encoder[i]}_{lr[j]}_{n_layers[k]}_{desc_size[l]}.pt")
                     # print(f"\tTrain Loss: {train_loss:7.3f}")
                     # print(f"\tValid Loss: {valid_loss:7.3f}")
                 
@@ -741,7 +745,7 @@ for i in range(len(hidden_size_encoder)):
                 print(best_valid_loss)
                 best_valid_loss = float("inf")
 
-
+quit()
 
 from hmp_utils import EvaluationProtocol
 

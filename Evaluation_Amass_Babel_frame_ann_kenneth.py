@@ -556,77 +556,78 @@ dense_vector_encoder_dim = 57
 dense_vector_decoder_dim = 57
 hidden_size_encoder = [1024]
 hidden_size_decoder = [1024]
-desc_size = [192]
+desc_size = [384]
 lr = [0.001]
 n_layers = [4]
+date_string = "16_07_2024"
 encoder_dropout = 0
 decoder_dropout = 0
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def train_fn(model, data_loader, optimizer, clip, teacher_forcing_ratio, scheduler, device):
-    model.train()
-    epoch_loss = 0
-    num_mocap = 0
-    for batch in data_loader:
-        src_lenght = 50
-        trg_lenght = 25
+# def train_fn(model, data_loader, optimizer, clip, teacher_forcing_ratio, scheduler, device):
+#     model.train()
+#     epoch_loss = 0
+#     num_mocap = 0
+#     for batch in data_loader:
+#         src_lenght = 50
+#         trg_lenght = 25
 
-        batch[0] = batch[0].permute(1, 0, 2).float()
-        src = batch[0][:src_lenght].to(device)
-        trg = batch[0][-trg_lenght:].to(device)
-        # src = [src length, batch size, dense_vector_dim]
-        # trg = [trg length, batch size, dense_vector_dim]
-        desc = batch[1].to(device)
+#         batch[0] = batch[0].permute(1, 0, 2).float()
+#         src = batch[0][:src_lenght].to(device)
+#         trg = batch[0][-trg_lenght:].to(device)
+#         # src = [src length, batch size, dense_vector_dim]
+#         # trg = [trg length, batch size, dense_vector_dim]
+#         desc = batch[1].to(device)
         
-        optimizer.zero_grad()
-        output = model(src, trg, desc, teacher_forcing_ratio)
-        # output = [trg length, batch size, dense_vector_dim]
-        output_dim = output.shape[-1]
-        output = output[:].view(-1, output_dim)
-        # output = [trg length * batch size, dense_vector_dim]
-        trg = trg.reshape(-1, output_dim)
-        # trg = [trg length * batch size, dense_vector_dim]
-        loss = torch.square(output - trg)
-        loss = torch.sum(loss)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        optimizer.step()
-        scheduler.step()
+#         optimizer.zero_grad()
+#         output = model(src, trg, desc, teacher_forcing_ratio)
+#         # output = [trg length, batch size, dense_vector_dim]
+#         output_dim = output.shape[-1]
+#         output = output[:].view(-1, output_dim)
+#         # output = [trg length * batch size, dense_vector_dim]
+#         trg = trg.reshape(-1, output_dim)
+#         # trg = [trg length * batch size, dense_vector_dim]
+#         loss = torch.square(output - trg)
+#         loss = torch.sum(loss)
+#         loss.backward()
+#         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+#         optimizer.step()
+#         scheduler.step()
 
-        epoch_loss += loss.item()
-        num_mocap += src.shape[1]
+#         epoch_loss += loss.item()
+#         num_mocap += src.shape[1]
 
-    return epoch_loss / num_mocap
+#     return epoch_loss / num_mocap
 
-def evaluate_fn(model, data_loader, device):
-    model.eval()
-    epoch_loss = 0
-    num_mocap = 0
-    with torch.no_grad():
-        for batch in data_loader:
-            src_lenght = 50
-            trg_lenght = 25
+# def evaluate_fn(model, data_loader, device):
+#     model.eval()
+#     epoch_loss = 0
+#     num_mocap = 0
+#     with torch.no_grad():
+#         for batch in data_loader:
+#             src_lenght = 50
+#             trg_lenght = 25
 
-            batch[0] = batch[0].permute(1, 0, 2).float()
-            src = batch[0][:src_lenght].to(device)
-            trg = batch[0][-trg_lenght:].to(device)
-            # src = [src length, batch size, dense_vector_dim]
-            # trg = [trg length, batch size, dense_vector_dim]
-            desc = batch[1].to(device)
+#             batch[0] = batch[0].permute(1, 0, 2).float()
+#             src = batch[0][:src_lenght].to(device)
+#             trg = batch[0][-trg_lenght:].to(device)
+#             # src = [src length, batch size, dense_vector_dim]
+#             # trg = [trg length, batch size, dense_vector_dim]
+#             desc = batch[1].to(device)
 
-            output = model(src, trg, desc, 0)  # turn off teacher forcing
-            # output = [trg length, batch size, trg vocab size]
-            output_dim = output.shape[-1]
-            output = output[:].view(-1, output_dim)
-            # output = [trg length * batch size, trg vocab size]
-            trg = trg.reshape(-1, output_dim)
-            # trg = [trg length * batch size]
-            loss = torch.square(output - trg)
-            loss = torch.sum(loss)
-            epoch_loss += loss.item()
-            num_mocap += src.shape[1]
+#             output = model(src, trg, desc, 0)  # turn off teacher forcing
+#             # output = [trg length, batch size, trg vocab size]
+#             output_dim = output.shape[-1]
+#             output = output[:].view(-1, output_dim)
+#             # output = [trg length * batch size, trg vocab size]
+#             trg = trg.reshape(-1, output_dim)
+#             # trg = [trg length * batch size]
+#             loss = torch.square(output - trg)
+#             loss = torch.sum(loss)
+#             epoch_loss += loss.item()
+#             num_mocap += src.shape[1]
 
-    return epoch_loss / num_mocap
+#     return epoch_loss / num_mocap
 
 
 clip = 1.0
@@ -642,8 +643,8 @@ history = {
 train_data, test_data = train_test_split(data_set, test_size=0.2, random_state=RANDOM_SEED)
 valid_data, test_data = train_test_split(test_data, test_size=0.5, random_state=RANDOM_SEED)
 
-train_data_loader = get_data_loader(train_data, batch_size)
-valid_data_loader = get_data_loader(valid_data, batch_size)
+# train_data_loader = get_data_loader(train_data, batch_size)
+# valid_data_loader = get_data_loader(valid_data, batch_size)
 test_data_loader = get_data_loader(test_data, batch_size)
 
 # batches = []
@@ -652,96 +653,114 @@ test_data_loader = get_data_loader(test_data, batch_size)
 
 # torch.save(batches, "/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/test_data_loader_frame_description.pt")
 
-all_seeds = [434345, 434345, 232, 875434, 3232356, 42, 645332, 67789, 3426, 2354]
+# all_seeds = [434345, 434345, 232, 875434, 3232356, 42, 645332, 67789, 3426, 2354]
 
-for i in range(len(hidden_size_encoder)):
-    for j in range(len(lr)):
-        for k in range(len(n_layers)):
-            for l in range(len(desc_size)):
-                print("Parametri utilizzati:")
-                print("Hidden size encoder:", hidden_size_encoder[i])
-                print("Learning rate:", lr[j])
-                print("Num layers:", n_layers[k])
-                print(f"Desc size: {desc_size[l]}")
+# for i in range(len(hidden_size_encoder)):
+#     for j in range(len(lr)):
+#         for k in range(len(n_layers)):
+#             for l in range(len(desc_size)):
+#                 print("Parametri utilizzati:")
+#                 print("Hidden size encoder:", hidden_size_encoder[i])
+#                 print("Learning rate:", lr[j])
+#                 print("Num layers:", n_layers[k])
+#                 print(f"Desc size: {desc_size[l]}")
 
-                run = wandb.init(
-                    # Set the project where this run will be logged
-                    project="amass_babel_MiniLM-L12_frame_annotation",
+#                 run = wandb.init(
+#                     # Set the project where this run will be logged
+#                     project="amass_babel_MiniLM-L12_frame_annotation",
 
-                    name=f"{hidden_size_encoder[i]}_{lr[j]}_{n_layers[k]}_{desc_size[l]}",
-                    # Track hyperparameters and run metadata
-                    config={
-                        "hidden_size_encoder": hidden_size_encoder[i],
-                        "learning_rate": lr[j],
-                        "num_layers": n_layers[k],
-                        "desc size:": desc_size[l],
-                    },
-                )
+#                     name=f"{hidden_size_encoder[i]}_{lr[j]}_{n_layers[k]}_{desc_size[l]}",
+#                     # Track hyperparameters and run metadata
+#                     config={
+#                         "hidden_size_encoder": hidden_size_encoder[i],
+#                         "learning_rate": lr[j],
+#                         "num_layers": n_layers[k],
+#                         "desc size:": desc_size[l],
+#                     },
+#                 )
 
-                torch.manual_seed(RANDOM_SEED)
+#                 torch.manual_seed(RANDOM_SEED)
 
-                encoder = Encoder(
-                    dense_vector_encoder_dim,
-                    hidden_size_encoder[i],
-                    n_layers[k],
-                    encoder_dropout,
-                )
+#                 encoder = Encoder(
+#                     dense_vector_encoder_dim,
+#                     hidden_size_encoder[i],
+#                     n_layers[k],
+#                     encoder_dropout,
+#                 )
 
-                decoder = Decoder(
-                    dense_vector_decoder_dim,
-                    hidden_size_decoder[i]+desc_size[l],
-                    n_layers[k],
-                    decoder_dropout,
-                )
+#                 decoder = Decoder(
+#                     dense_vector_decoder_dim,
+#                     hidden_size_decoder[i]+desc_size[l],
+#                     n_layers[k],
+#                     decoder_dropout,
+#                 )
 
-                model = Seq2Seq(encoder, decoder, device).to(device)
+#                 model = Seq2Seq(encoder, decoder, device).to(device)
 
-                optimizer = optim.Adam(model.parameters(), lr[j])
+#                 optimizer = optim.Adam(model.parameters(), lr[j])
 
-                total_steps = len(train_data_loader) * EPOCHS
+#                 total_steps = len(train_data_loader) * EPOCHS
 
-                scheduler = get_linear_schedule_with_warmup(
-                    optimizer,
-                    num_warmup_steps=0,
-                    num_training_steps=total_steps
-                )
+#                 scheduler = get_linear_schedule_with_warmup(
+#                     optimizer,
+#                     num_warmup_steps=0,
+#                     num_training_steps=total_steps
+#                 )
                 
-                for epoch in tqdm.tqdm(range(EPOCHS)):
-                    train_loss = train_fn(
-                        model,
-                        train_data_loader,
-                        optimizer,
-                        clip,
-                        teacher_forcing_ratio,
-                        scheduler,
-                        device,
-                    )
-                    history["train_loss"].append(train_loss)
+#                 for epoch in tqdm.tqdm(range(EPOCHS)):
+#                     train_loss = train_fn(
+#                         model,
+#                         train_data_loader,
+#                         optimizer,
+#                         clip,
+#                         teacher_forcing_ratio,
+#                         scheduler,
+#                         device,
+#                     )
+#                     history["train_loss"].append(train_loss)
 
-                    valid_loss = evaluate_fn(
-                        model,
-                        valid_data_loader,
-                        device,
-                    )
-                    history["valid_loss"].append(valid_loss)
+#                     valid_loss = evaluate_fn(
+#                         model,
+#                         valid_data_loader,
+#                         device,
+#                     )
+#                     history["valid_loss"].append(valid_loss)
 
-                    if valid_loss < best_valid_loss:
-                        best_valid_loss = valid_loss
-                        torch.save(model.state_dict(), "/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/amass_babel_frame_ann_MiniLM_16_07_2004_1024_0.001_4_192.pt")
-                    # print(f"\tTrain Loss: {train_loss:7.3f}")
-                    # print(f"\tValid Loss: {valid_loss:7.3f}")
+#                     if valid_loss < best_valid_loss:
+#                         best_valid_loss = valid_loss
+#                         torch.save(model.state_dict(), "/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/amass_babel_frame_ann_MiniLM_16_07_2004_1024_0.001_4_192.pt")
+#                     # print(f"\tTrain Loss: {train_loss:7.3f}")
+#                     # print(f"\tValid Loss: {valid_loss:7.3f}")
                 
-                    wandb.log({"validation error": valid_loss, "train error": train_loss})
+#                     wandb.log({"validation error": valid_loss, "train error": train_loss})
 
-                run.finish()
+#                 run.finish()
 
-                history["losses"].append(best_valid_loss)
-                # if best_valid_loss == min(history["losses"]):
-                #     torch.save(model.state_dict(), "/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/amass_babel_frame_annotations.pt")
-                print(best_valid_loss)
-                best_valid_loss = float("inf")
+#                 history["losses"].append(best_valid_loss)
+#                 # if best_valid_loss == min(history["losses"]):
+#                 #     torch.save(model.state_dict(), "/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/amass_babel_frame_annotations.pt")
+#                 print(best_valid_loss)
+#                 best_valid_loss = float("inf")
 
 
+
+torch.manual_seed(RANDOM_SEED)
+
+encoder = Encoder(
+    dense_vector_encoder_dim,
+    hidden_size_encoder[0],
+    n_layers[0],
+    encoder_dropout,
+)
+
+decoder = Decoder(
+    dense_vector_decoder_dim,
+    hidden_size_decoder[0]+desc_size[0],
+    n_layers[0],
+    decoder_dropout,
+)
+
+model = Seq2Seq(encoder, decoder, device).to(device)
 
 from hmp_utils import EvaluationProtocol
 
@@ -797,7 +816,7 @@ def test_fn(model, data_loader, zero_velocity, device):
 
     return epoch_loss / num_mocap, predictions, targets
 
-model.load_state_dict(torch.load("/home/michieletto/Progetti_per_tesi/Progetto_RNN/Parametri_modello/amass_babel_frame_ann_MiniLM_16_07_2004_1024_0.001_4_192.pt"))
+model.load_state_dict(torch.load(f"/home/michieletto/Progetti_per_tesi/Progetti_RNN_git/Parametri_modello/amass_babel_frame_ann_MiniLM_{date_string}_{hidden_size_encoder[0]}_{lr[0]}_{n_layers[0]}_{desc_size[0]}.pt"))
 
 
 zero_vel = [False, True]
@@ -849,7 +868,7 @@ for zero_velocity in zero_vel:
             metrics_res_by_action_dict=metrics,
             metrics_dict=metrics_dict,
             framerate=25,
-            csv_path="/home/michieletto/Progetti_per_tesi/Progetto_RNN/Risultati_test_csv/amass_babel_frame_ann_MiniML",
+            csv_path="/home/michieletto/Progetti_per_tesi/Progetto_RNN/Risultati_test_csv/amass_babel_frame_ann_MiniML_384",
             print_table=False,
         )
     else:
@@ -857,6 +876,6 @@ for zero_velocity in zero_vel:
             metrics_res_by_action_dict=metrics,
             metrics_dict=metrics_dict,
             framerate=25,
-            csv_path="/home/michieletto/Progetti_per_tesi/Progetto_RNN/Risultati_test_csv/amass_babel_frame_ann_MiniML_zero_velocity",
+            csv_path="/home/michieletto/Progetti_per_tesi/Progetto_RNN/Risultati_test_csv/amass_babel_frame_ann_MiniML_384_zero_velocity",
             print_table=False,
         )
